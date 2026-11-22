@@ -1,4 +1,3 @@
-//Task: reading multiple bytes from multiple registers. Need to wake up the device first, and then convert data
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -52,7 +51,6 @@ void addr_check(i2c_master_dev_handle_t dev_handle) {
         else {ESP_LOGI(TAG, "Wrong sensor address!"); exit(1);}
     } else {
         ESP_LOGE(TAG, "I2C communication failed: %s", esp_err_to_name(ret));
-        //Bro we got the wrong house, run away! All jokes aside what should the program do when it gets the wrong address?
         exit(1);
     }
 }
@@ -79,10 +77,8 @@ void wake_up(i2c_master_dev_handle_t dev_handle) {
 
 }
 
-//Note: having 3 functions that only does 1 thing looks kinda funny right now but it will probably be justified for much larger code file
 void config(i2c_master_dev_handle_t dev_handle) {
-    //The data sheet says the config bit is 3 and 4; 0, 1 and 2 is empty so idk if <<3 is actually needed or no
-    uint8_t accel_config_val = ACCEL_CONFIG_VAL<<3;
+    uint8_t accel_config_val = ACCEL_CONFIG_VAL << 3;
     uint8_t write_buf[2] = {ACCEL_CONFIG_ADDR, accel_config_val};
 
     esp_err_t ret = i2c_master_transmit(
@@ -96,7 +92,6 @@ void config(i2c_master_dev_handle_t dev_handle) {
         ESP_LOGI(TAG, "Device configured");
     } else {
         ESP_LOGE(TAG, "Configuration failed: %s", esp_err_to_name(ret));
-        //No need to exit
     }
 }
 
@@ -155,11 +150,8 @@ vTaskDelay(pdMS_TO_TICKS(20)); // Let sensor stabilize after waking
             acceleration accelaration = accel_calc(accel_x_data, accel_y_data, accel_z_data, ACCEL_CONFIG_VAL);
 
             ESP_LOGI(TAG, "Raw Accel -> X: %d, Y: %d, Z: %d", accel_x_data, accel_y_data, accel_z_data);
-            //I dont have a physical logic analyzer and a sensor right now so I need to use Wokwi and ESP_LOGI doesnt output anything (at least I dont know where they do) so I use both here so I can make minimal adjustment
-            printf("Raw Accel -> X: %d, Y: %d, Z: %d\n", accel_x_data, accel_y_data, accel_z_data);
         } else {
             ESP_LOGE(TAG, "Failed to read accel data: %s", esp_err_to_name(ret));
-            printf("Failed to read accel data\n");
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
