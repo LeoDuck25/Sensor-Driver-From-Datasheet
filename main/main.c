@@ -28,7 +28,7 @@ static const char *TAG = "MPU6050_DRIVER";
 #define PWR1_SLEEP_BIT              6 //Set this to 0
 #define PWR1_CYCLE_BIT              5
 #define PWR1_TEMP_DIS_BIT           3 //Temperature sensor, 0 by default
-#define PWR1_CLKSEL_BIT             0 //Clock source (?)
+#define PWR1_CLKSEL_BIT             0 //Clock source
 
 void addr_check(i2c_master_dev_handle_t dev_handle) {
     uint8_t reg_addr = MPU6050_WHO_AM_I_REG;
@@ -150,6 +150,9 @@ vTaskDelay(pdMS_TO_TICKS(20)); // Let sensor stabilize after waking
             acceleration accelaration = accel_calc(accel_x_data, accel_y_data, accel_z_data, ACCEL_CONFIG_VAL);
 
             ESP_LOGI(TAG, "Raw Accel -> X: %d, Y: %d, Z: %d", accel_x_data, accel_y_data, accel_z_data);
+            ESP_LOGI(TAG, "Raw Temp -> T: %d", temp_data);
+            ESP_LOGI(TAG, "Formatted Accel -> X: %d, Y: %d, Z: %d", accelaration.accel_x, accelaration.accel_y, accelaration.accel_z);
+            ESP_LOGI(TAG, "Formatted Temperature -> T: %d", temperature);
         } else {
             ESP_LOGE(TAG, "Failed to read accel data: %s", esp_err_to_name(ret));
         }
