@@ -1,0 +1,9 @@
+name: host-tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: gcc -Wall -Werror -o test_runner test/test_sensor_math.c main/sensor_math.c -lm
+      - run: ./test_runner
