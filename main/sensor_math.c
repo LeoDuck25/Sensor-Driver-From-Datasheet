@@ -24,6 +24,30 @@ acceleration accel_calc(int16_t raw_accelx,int16_t raw_accely,int16_t raw_accelz
     return output;
 }
 
+float calibrate_accel_z(float accel_z) {
+    float offset = -0.3570;
+    float scale = 1.0176;
+    float output = (accel_z - offset)/scale;
+
+    return output;
+}
+
+float calibrate_accel_y(float accel_y) {
+    float offset = -0.0015;
+    float scale = 1.0005;
+    float output = (accel_y - offset)/scale;
+
+    return output;
+}
+
+float calibrate_accel_x(float accel_x) {
+    float offset = 0.0382;
+    float scale = 0.9924;
+    float output = (accel_x - offset)/scale;
+
+    return output;
+}
+
 int16_t combine_byte(uint8_t hi, uint8_t lo) {
     int16_t output = (int16_t)((uint16_t)(hi<<8)|lo);
     return output;

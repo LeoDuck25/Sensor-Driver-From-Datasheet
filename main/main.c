@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+#include <math.h>
 
 #include "sensor_math.h"
 
@@ -97,6 +98,8 @@ void config(i2c_master_dev_handle_t dev_handle) {
 
 void app_main(void)
 {
+    int N = 100;
+    
     i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_MASTER_NUM,
@@ -123,19 +126,18 @@ void app_main(void)
     wake_up(dev_handle);
     config(dev_handle);
 
-vTaskDelay(pdMS_TO_TICKS(20)); // Let sensor stabilize after waking
+    vTaskDelay(pdMS_TO_TICKS(20)); // Let sensor stabilize after waking
 
     uint8_t sensor_accel_temp_data[8];
     uint8_t start_reg_addr = ACCEL_XOUT_H;
-
-    while (1) {
+/*
         esp_err_t ret = i2c_master_transmit_receive(
-            dev_handle,
-            &start_reg_addr,
-            1,
-            sensor_accel_temp_data,
-            sizeof(sensor_accel_temp_data),
-            1000
+        dev_handle,
+        &start_reg_addr,
+        1,
+        sensor_accel_temp_data,
+        sizeof(sensor_accel_temp_data),
+        1000
         );
 
         if (ret == ESP_OK) {
@@ -147,15 +149,66 @@ vTaskDelay(pdMS_TO_TICKS(20)); // Let sensor stabilize after waking
             int16_t temp_data = (int16_t)(((uint16_t)sensor_accel_temp_data[6] << 8) | sensor_accel_temp_data[7]);
 
             float temperature = temperature_calc(temp_data);
-            acceleration accelaration = accel_calc(accel_x_data, accel_y_data, accel_z_data, ACCEL_CONFIG_VAL);
+            acceleration accel = accel_calc(accel_x_data, accel_y_data, accel_z_data, ACCEL_CONFIG_VAL);
+            float calibrated_z = calibrate_accel_z(accel.accel_z);
 
             ESP_LOGI(TAG, "Raw Accel -> X: %d, Y: %d, Z: %d", accel_x_data, accel_y_data, accel_z_data);
             ESP_LOGI(TAG, "Raw Temp -> T: %d", temp_data);
-            ESP_LOGI(TAG, "Formatted Accel -> X: %d, Y: %d, Z: %d", accelaration.accel_x, accelaration.accel_y, accelaration.accel_z);
-            ESP_LOGI(TAG, "Formatted Temperature -> T: %d", temperature);
+            ESP_LOGI(TAG, "Formatted Accel -> X: %f, Y: %f, Z: %f", accel.accel_x, accel.accel_y, calibrated_z);
+            ESP_LOGI(TAG, "Formatted Temperature -> T: %f", temperature);
+
+
+            ESP_LOGI(TAG, "Readings in HEX -> %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X", 
+                sensor_accel_temp_data[0], sensor_accel_temp_data[1], sensor_accel_temp_data[2],
+                sensor_accel_temp_data[3], sensor_accel_temp_data[4], sensor_accel_temp_data[5],
+                sensor_accel_temp_data[6], sensor_accel_temp_data[7]
+            );
+
         } else {
-            ESP_LOGE(TAG, "Failed to read accel data: %s", esp_err_to_name(ret));
+            ESP_LOGE(TAG, "Failed to read sensor data: %s", esp_err_to_name(ret));
         }
+*/
+    while (1) {
+    
+        float sx = 0, sy = 0, sz = 0, st = 0;
+        for (int i = 0; i < N; i++) {
+            esp_err_t ret = i2c_master_transmit_receive(
+            dev_handle,
+            &start_reg_addr,
+            1,
+            sensor_accel_temp_data,
+            sizeof(sensor_accel_temp_data),
+            1000
+        );
+
+        if (ret == ESP_OK) {
+            int16_t accel_x_data = (int16_t)(((uint16_t)sensor_accel_temp_data[0] << 8) | sensor_accel_temp_data[1]);
+            int16_t accel_y_data = (int16_t)(((uint16_t)sensor_accel_temp_data[2] << 8) | sensor_accel_temp_data[3]);
+            int16_t accel_z_data = (int16_t)(((uint16_t)sensor_accel_temp_data[4] << 8) | sensor_accel_temp_data[5]);
+
+            int16_t temp_data = (int16_t)(((uint16_t)sensor_accel_temp_data[6] << 8) | sensor_accel_temp_data[7]);
+
+            float temperature = temperature_calc(temp_data);
+            acceleration accel = accel_calc(accel_x_data, accel_y_data, accel_z_data, ACCEL_CONFIG_VAL);
+            float calibrated_z = calibrate_accel_z(accel.accel_z);
+            float calibrated_y = calibrate_accel_y(accel.accel_y);
+            float calibrated_x = calibrate_accel_x(accel.accel_x);
+
+            sx += calibrated_x;
+            sy += calibrated_y;
+            sz += calibrated_z;
+            st += temperature;
+
+        } else {
+            ESP_LOGE(TAG, "Failed to read sensor data: %s", esp_err_to_name(ret));
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        
+
+        float x = sx / N, y = sy / N, z = sz / N;
+        ESP_LOGI(TAG, "REF  X=%.4f Y=%.4f Z=%.4f |a|=%.4f  T=%.2f\n", x, y, z, sqrtf(x*x + y*y + z*z), st / N);
+
 
         vTaskDelay(pdMS_TO_TICKS(1000));
   }

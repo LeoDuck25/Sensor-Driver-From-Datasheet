@@ -57,8 +57,15 @@ int test_3(void) {
     return 0;
 }
 
+void debug_test(void) {
+    float temperature = temperature_calc(-1280);
+    printf("Temperature: %f", temperature);
+}
+
 int main(void) {
     test_1();
     test_2();
     test_3();
+
+    debug_test();
 }

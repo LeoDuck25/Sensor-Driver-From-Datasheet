@@ -73,6 +73,16 @@ START | 0x68+W | ACK | reg addr | ACK | REPEATED START | 0x68+R | ACK | data... 
 int16_t raw = (int16_t)(((uint16_t)hi << 8) | lo);
 float   g   = raw / 16384.0f;   // ±2 g range: 16384 LSB/g
 ```
+**Annotated Pulseview Capture**
+Readings during address check, waking up the device and register configuration:
+![Address Check](images/address_check.png)
+![Wake Up](images/wake_up.png)
+![Register Configuration](images/config.png)
+
+Readings during burst read:
+![Burst read](images/pulseview_capture.png)
+Compared to terminal output:
+![Terminal output of the same reading](images/example_terminal_output.png)
 
 ## Verification
 

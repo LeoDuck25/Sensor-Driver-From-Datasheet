@@ -14,6 +14,10 @@ typedef struct {
 
 acceleration accel_calc(int16_t raw_accelx,int16_t raw_accely,int16_t raw_accelz, uint8_t accel_sen);
 
+float calibrate_accel_z(float accel_z);
+float calibrate_accel_y(float accel_y);
+float calibrate_accel_x(float accel_x);
+
 int16_t combine_byte(uint8_t hi, uint8_t lo);
 
 #endif
